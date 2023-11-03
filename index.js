@@ -6,5 +6,5 @@ const DataStream = require("./socket/datastream");
     apiKey: config.API_KEY,
     secretKey: config.API_SECRET,
     feed: "iex",
-    paper: true
+    paper: false
 }));
