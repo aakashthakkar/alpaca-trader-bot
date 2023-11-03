@@ -11,6 +11,7 @@ function scheduleDailyStockPurchase() {
 
     schedule.scheduleJob(rule, () => {
         voo.TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
+        voo.TOTAL_ORDER_FAILURES = 0;
     });
 }
 

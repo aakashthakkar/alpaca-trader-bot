@@ -4,6 +4,7 @@ class voo {
         this.pricingInitialized = false;
     };
     static TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
+    static TOTAL_ORDER_FAILURES = 0;
     async buyTenDollarVoo(event) {
         try {
             voo.TOTAL_TRADES_TODAY.splice(voo.TOTAL_TRADES_TODAY.indexOf(event), 1);
@@ -18,8 +19,8 @@ class voo {
             // update only if order succeeds
             this.updateVooPricing();
         } catch (error) {
-            // order failed, add event back to array
-            voo.TOTAL_TRADES_TODAY.push(event);
+            // order failed, add event back to array. Limit adding event back to avoid infinite loop of orders
+            if(voo.TOTAL_ORDER_FAILURES++ < 5) voo.TOTAL_TRADES_TODAY.push(event);
             console.log("couldn't place order + " + JSON.stringify(error));
         }
         
