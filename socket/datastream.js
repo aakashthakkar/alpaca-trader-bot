@@ -1,5 +1,18 @@
 const Alpaca = require("@alpacahq/alpaca-trade-api");
 const voo = require("../trading/voo");
+const schedule = require('node-schedule');
+
+
+function scheduleDailyStockPurchase() {
+    const rule = new schedule.RecurrenceRule();
+    rule.hour = 6;
+    rule.minute = 0;
+    rule.tz = 'America/New_York';
+
+    schedule.scheduleJob(rule, () => {
+        voo.TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
+    });
+}
 
 class DataStream {
     constructor({ apiKey, secretKey, feed, paper = true }) {
@@ -11,6 +24,7 @@ class DataStream {
         });
        
         this.vooObj = new voo(this.alpaca);
+        scheduleDailyStockPurchase();
         const socket = this.alpaca.data_stream_v2;
 
         socket.onConnect(function () {

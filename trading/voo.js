@@ -3,8 +3,7 @@ class voo {
         this.alpaca = alpaca;
         this.pricingInitialized = false;
     };
-    static TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE", "PRICE_LOWER_THAN_LAST_TWENTY_ORDER_PURCHASE_AVERAGE", "PRICE_LOWER_THAN_LAST_HUNDRED_ORDER_PURCHASE_AVERAGE"];
-
+    static TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
     async buyTenDollarVoo(event) {
         try {
             voo.TOTAL_TRADES_TODAY.splice(voo.TOTAL_TRADES_TODAY.indexOf(event), 1);
@@ -23,6 +22,7 @@ class voo {
             voo.TOTAL_TRADES_TODAY.push(event);
             console.log("couldn't place order + " + JSON.stringify(error));
         }
+        
     }
 
     async updateVooPricing() {
