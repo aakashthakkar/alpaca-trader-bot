@@ -46,7 +46,6 @@ class DataStream {
         });
 
         socket.onStateChange((state) => {
-            this.vooObj.pricingInitialized = false;
             console.log(state);
         });
 
