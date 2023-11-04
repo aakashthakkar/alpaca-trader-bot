@@ -1,5 +1,4 @@
 "use strict";
-const config = require("./config");
 const DataStream = require("./socket/datastream");
 
 (new DataStream({
