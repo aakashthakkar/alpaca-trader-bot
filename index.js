@@ -3,8 +3,8 @@ const config = require("./config");
 const DataStream = require("./socket/datastream");
 
 (new DataStream({
-    apiKey: config.API_KEY,
-    secretKey: config.API_SECRET,
+    apiKey: process.env.API_KEY,
+    secretKey: process.env.SECRET_KEY,
     feed: "iex",
-    paper: false
+    paper: process.env.IS_PAPER
 }));
