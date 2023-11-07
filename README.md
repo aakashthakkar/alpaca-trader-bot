@@ -1,4 +1,4 @@
-# alpaca-trading-bot
+# alpaca-trader-bot
 Alpaca trading bot learning project <br />
 Use it at your own risk!
 
