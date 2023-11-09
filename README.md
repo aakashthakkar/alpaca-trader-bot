@@ -17,7 +17,8 @@ It needs 3 Environment variables
 
 # Running Locally
 - Uses Node 18
-- npm i && API_KEY=<API_KEY> SECRET_KEY=<SECRET_KEY> IS_PAPER=<IS_PAPER> npm start
+- Setup environment variables
+- npm i && npm start
 
 # Docker
 Get it from <a href="https://hub.docker.com/repository/docker/thakkaraakash/alpaca-trader-bot/general">docker hub</a> and run it with the above ENV variables.
