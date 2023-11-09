@@ -56,16 +56,16 @@ class DataStream {
         dailySchedules(socket);
 
         socket.onConnect(function () {
-            console.log("Connected");
+            console.log(`${new Date().toLocaleString()} Socket connected`);
             socket.subscribeForQuotes(["VOO"]);
         });
 
         socket.onError((err) => {
-            console.log("err" + err.toString());
+            console.log(`${new Date().toLocaleString()} ERR: ${err.toString()}`);
         });
 
         socket.onStockTrade((trade) => {
-            console.log(trade);
+            console.log(`${new Date().toLocaleString()} TRADE: ${JSON.stringify(trade)}`);
         });
 
         socket.onStockQuote(async (quote) => {
@@ -80,19 +80,19 @@ class DataStream {
         });
 
         socket.onStockBar((bar) => {
-            console.log(bar);
+            console.log(`${new Date().toLocaleString()} BAR: ${JSON.stringify(bar)}`);
         });
 
         socket.onStatuses((s) => {
-            console.log(s);
+            console.log(`${new Date().toLocaleString()} STATUS: ${JSON.stringify(s)}`);
         });
 
         socket.onStateChange((state) => {
-            console.log(state);
+            console.log(`${new Date().toLocaleString()} STATE CHANGED: ${JSON.stringify(state)}`);
         });
 
         socket.onDisconnect(() => {
-            console.log("Disconnected");
+            console.log(`${new Date().toLocaleString()} Socket disconnected`);
         });
 
 

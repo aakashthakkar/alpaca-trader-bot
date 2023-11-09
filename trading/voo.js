@@ -15,13 +15,13 @@ class voo {
                 type: "market",
                 time_in_force: "day"
             });
-            console.log(new Date().toLocaleString() + " Purchased 10 dollars of VOO for event: " + event);
+            console.log(`${new Date().toLocaleString()} Purchased 10 dollars of VOO for event:  event`);
             // update only if order succeeds
             this.updateVooPricing();
         } catch (error) {
             // order failed, add event back to array. Limit adding event back to avoid infinite loop of orders
             if(voo.TOTAL_ORDER_FAILURES++ < 5) voo.TOTAL_TRADES_TODAY.push(event);
-            console.log("couldn't place order + " + JSON.stringify(error));
+            console.log(`${new Date().toLocaleString()} couldn't place order ${JSON.stringify(error)}`);
         }
         
     }
@@ -32,7 +32,7 @@ class voo {
             this.avg_last_twenty_order_purchase_price = await this.getLastTwentyOrderPurchaseAverage();
             this.avg_last_hundred_order_purchase_price = await this.getLastHundredOrderPurchaseAverage();
         } catch (error) {
-            console.log("couldn't update VOO pricing + " + JSON.stringify(error));
+            console.log(`${new Date().toLocaleString()} couldn't update VOO pricing :${JSON.stringify(error)}`);
         }
     }
 
@@ -42,7 +42,7 @@ class voo {
             const voo_asset_information = positions.find(position => position.symbol === 'VOO');
             return +voo_asset_information.avg_entry_price;
         } catch (error) {
-            console.log("couldn't get VOO average entry price + " + JSON.stringify(error));
+            console.log(`${new Date().toLocaleString()} couldn't get VOO average entry price : ${JSON.stringify(error)}`);
         }
     }
 
@@ -58,7 +58,7 @@ class voo {
             const voo_order_prices_sum = voo_order_prices.reduce((a, b) => +a + +b, 0);
             return voo_order_prices_sum / voo_order_prices.length;
         } catch (error) {
-            console.log("couldn't get last twenty order purchase average + " + JSON.stringify(error));
+            console.log(`${new Date().toLocaleString()} couldn't get last twenty order purchase average : ${JSON.stringify(error)}`);
         }
     }
     async getLastHundredOrderPurchaseAverage() {
@@ -72,7 +72,7 @@ class voo {
             const voo_order_prices_sum = voo_order_prices.reduce((a, b) => +a + +b, 0);
             return voo_order_prices_sum / voo_order_prices.length;
         } catch (error) {
-            console.log("couldn't get last hundred order purchase average + " + JSON.stringify(error));
+            console.log(`${new Date().toLocaleString()} couldn't get last hundred order purchase average : ${JSON.stringify(error)}`);
         }
     }
 
