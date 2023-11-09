@@ -41,10 +41,10 @@ class DataStream {
             console.log(trade);
         });
 
-        socket.onStockQuote((quote) => {
+        socket.onStockQuote(async (quote) => {
             switch (quote.Symbol) {
                 case "VOO":
-                    this.vooObj.handleQuoteChange(quote);
+                    await this.vooObj.handleQuoteChange(quote);
                     break;
                 default:
                     //do nothing;
