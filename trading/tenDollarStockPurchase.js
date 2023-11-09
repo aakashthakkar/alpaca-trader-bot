@@ -8,9 +8,9 @@ class TenDollarStockPurchaseClass {
         this.alpaca = alpaca;
         this.pricingInitialized = false;
         this.stockTicker = stockTicker;
-        this.dailySchedules();
         this.totalTradesToday = Object.assign([], DAILY_ENABLED_TRADES);
         this.totalOrderFailures = 0;
+        this.dailySchedules();
     };
     static DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
     
