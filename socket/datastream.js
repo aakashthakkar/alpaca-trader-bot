@@ -2,8 +2,8 @@ const Alpaca = require("@alpacahq/alpaca-trade-api");
 const voo = require("../trading/voo");
 const schedule = require('node-schedule');
 
-function dailySchedules(socket) {
-    scheduleDailyStockPurchase();
+function dailySchedules(socket, stockInstance) {
+    scheduleDailyStockPurchase(stockInstance);
     scheduleDailyReconnect(socket);
     scheduleEnableDoubleCheckMarkedClosedBeforePlacingOrder();
     scheduleDailyDisconnect(socket);
@@ -20,7 +20,7 @@ function scheduleEnableDoubleCheckMarkedClosedBeforePlacingOrder() {
     });
 }
 
-function scheduleDailyStockPurchase() {
+function scheduleDailyStockPurchase(stockInstance) {
     const rule = new schedule.RecurrenceRule();
     rule.hour = 6;
     rule.minute = 0;
@@ -29,7 +29,12 @@ function scheduleDailyStockPurchase() {
     schedule.scheduleJob(rule, () => {
         voo.TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
         voo.TOTAL_ORDER_FAILURES = 0;
+        // disable double checking since, it will be enabled close to market close time
         voo.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
+        /* disabling pricing initialized so that it gets the morning price before buying the stock.
+            This is to avoid buying the NON daily default stock at the previous day's price.
+        */
+        stockInstance.pricingInitialized = false;
     });
 }
 
@@ -63,10 +68,10 @@ class DataStream {
             feed,
             paper
         });
-       
+
         this.vooObj = new voo(this.alpaca);
         const socket = this.alpaca.data_stream_v2;
-        dailySchedules(socket);
+        dailySchedules(socket, this.vooObj);
 
         socket.onConnect(function () {
             console.log(`${new Date().toLocaleString()} :: Socket connected`);
