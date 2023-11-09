@@ -5,12 +5,15 @@ const DAILY_ENABLED_TRADES = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHA
 
 class TenDollarStockPurchaseClass {
     constructor(alpaca, stockTicker) {
+        // initialized values
         this.alpaca = alpaca;
-        this.pricingInitialized = false;
         this.stockTicker = stockTicker;
+        this.dailySchedules();
+
+        // changes accordingly
+        this.pricingInitialized = false;
         this.totalTradesToday = Object.assign([], DAILY_ENABLED_TRADES);
         this.totalOrderFailures = 0;
-        this.dailySchedules();
     };
     static DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
     
