@@ -1,4 +1,6 @@
 const schedule = require('node-schedule');
+const DEFAULT_DAILY_TRADES = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
+
 
 
 class TenDollarStockPurchaseClass {
@@ -6,22 +8,21 @@ class TenDollarStockPurchaseClass {
         this.alpaca = alpaca;
         this.pricingInitialized = false;
         this.stockTicker = stockTicker;
-        dailySchedules();
+        this.dailySchedules();
+        this.totalTradesToday = Object.assign([], DEFAULT_DAILY_TRADES);
+        this.totalOrderFailures = 0;
     };
-    static TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
-    static TOTAL_ORDER_FAILURES = 0;
     static DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
-
-
-
+    
     /*
     Scheduling methods
     */
     dailySchedules() {
-        scheduleDailyStockPurchase();
-        scheduleEnableDoubleCheckMarketClosedBeforePlacingOrder();
+        this.scheduleDailyStockPurchase();
     }
-    scheduleEnableDoubleCheckMarketClosedBeforePlacingOrder() {
+
+    // common methods for market open and close
+    static scheduleEnableDoubleCheckMarketClosedBeforePlacingOrder() {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 15;
         rule.minute = 59;
@@ -31,7 +32,17 @@ class TenDollarStockPurchaseClass {
             TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
         });
     }
-
+    static scheduleDisableDoubleCheckMarketClosedBeforePlacingOrder() {
+        const rule = new schedule.RecurrenceRule();
+        rule.hour = 6;
+        rule.minute = 0;
+        rule.tz = 'America/New_York';
+    
+        schedule.scheduleJob(rule, () => {
+            TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
+        });
+    }
+     
     scheduleDailyStockPurchase() {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 6;
@@ -39,13 +50,8 @@ class TenDollarStockPurchaseClass {
         rule.tz = 'America/New_York';
 
         schedule.scheduleJob(rule, () => {
-            TenDollarStockPurchaseClass.TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
-            TenDollarStockPurchaseClass.TOTAL_ORDER_FAILURES = 0;
-            // disable double checking since, it will be enabled close to market close time
-            TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
-            /* disabling pricing initialized so that it gets the morning price before buying the stock.
-                This is to avoid buying the NON daily default stock at the previous day's price.
-            */
+            this.totalTradesToday = Object.assign([], DEFAULT_DAILY_TRADES);
+            this.totalOrderFailures = 0;
             this.pricingInitialized = false;
         });
     }
@@ -56,8 +62,8 @@ class TenDollarStockPurchaseClass {
     async buyTenDollarStock(event) {
         try {
             // double check market open after 3:59PM
-            if (DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
-            TenDollarStockPurchaseClass.TOTAL_TRADES_TODAY.splice(TenDollarStockPurchaseClass.TOTAL_TRADES_TODAY.indexOf(event), 1);
+            this.totalTradesToday.splice(this.totalTradesToday.indexOf(event), 1);
+            if (TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
             await this.alpaca.createOrder({
                 symbol: this.stockTicker,
                 notional: 10,
@@ -70,7 +76,7 @@ class TenDollarStockPurchaseClass {
             await this.updateStockPricing();
         } catch (error) {
             // order failed, add event back to array. Limit adding event back to avoid infinite loop of orders
-            if (TenDollarStockPurchaseClass.TOTAL_ORDER_FAILURES++ < 5) TenDollarStockPurchaseClass.TOTAL_TRADES_TODAY.push(event);
+            if (++this.totalOrderFailures < 5) this.totalTradesToday.push(event);
             console.log(`${new Date().toLocaleString()} :: couldn't place order ${JSON.stringify(error)}`);
         }
 
@@ -133,7 +139,7 @@ class TenDollarStockPurchaseClass {
         // first time initialization of pricing information
         if (!this.pricingInitialized) { await this.updateStockPricing(); this.pricingInitialized = true; }
         const currentPurchasePrice = quote.AskPrice;
-        TenDollarStockPurchaseClass.TOTAL_TRADES_TODAY.forEach(event => {
+        this.totalTradesToday.forEach(event => {
             switch (event) {
                 case "DAILY_PURCHASE":
                     this.buyTenDollarStock('DAILY_PURCHASE');

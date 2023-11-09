@@ -10,10 +10,13 @@ class DataStream {
             feed,
             paper
         });
-
-        const socket = this.alpaca.data_stream_v2;
+        
         // VOO initialization
         this.voo = new TenDollarStockPurchaseClass(this.alpaca, 'VOO');
+
+        const socket = this.alpaca.data_stream_v2;
+        TenDollarStockPurchaseClass.scheduleEnableDoubleCheckMarketClosedBeforePlacingOrder();
+        TenDollarStockPurchaseClass.scheduleDisableDoubleCheckMarketClosedBeforePlacingOrder();
         
 
         socket.onConnect(function () {
@@ -32,7 +35,7 @@ class DataStream {
         socket.onStockQuote(async (quote) => {
             switch (quote.Symbol) {
                 case "VOO":
-                    await this.vooObj.handleQuoteChange(quote);
+                    await this.voo.handleQuoteChange(quote);
                     break;
                 default:
                     //do nothing;
@@ -58,8 +61,8 @@ class DataStream {
 
 
         socket.connect();
-        scheduleDailyReconnect(socket);
-        scheduleDailyDisconnect(socket);
+        this.scheduleDailyReconnect();
+        this.scheduleDailyDisconnect();
     }
 
     scheduleDailyReconnect() {
