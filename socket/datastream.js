@@ -1,64 +1,6 @@
 const Alpaca = require("@alpacahq/alpaca-trade-api");
-const voo = require("../trading/voo");
+const TenDollarStockPurchaseClass = require("../trading/tenDollarStockPurchase");
 const schedule = require('node-schedule');
-
-function dailySchedules(socket, stockInstance) {
-    scheduleDailyStockPurchase(stockInstance);
-    scheduleDailyReconnect(socket);
-    scheduleEnableDoubleCheckMarkedClosedBeforePlacingOrder();
-    scheduleDailyDisconnect(socket);
-}
-
-function scheduleEnableDoubleCheckMarkedClosedBeforePlacingOrder() {
-    const rule = new schedule.RecurrenceRule();
-    rule.hour = 15;
-    rule.minute = 59;
-    rule.tz = 'America/New_York';
-
-    schedule.scheduleJob(rule, () => {
-        voo.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
-    });
-}
-
-function scheduleDailyStockPurchase(stockInstance) {
-    const rule = new schedule.RecurrenceRule();
-    rule.hour = 6;
-    rule.minute = 0;
-    rule.tz = 'America/New_York';
-
-    schedule.scheduleJob(rule, () => {
-        voo.TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
-        voo.TOTAL_ORDER_FAILURES = 0;
-        // disable double checking since, it will be enabled close to market close time
-        voo.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
-        /* disabling pricing initialized so that it gets the morning price before buying the stock.
-            This is to avoid buying the NON daily default stock at the previous day's price.
-        */
-        stockInstance.pricingInitialized = false;
-    });
-}
-
-function scheduleDailyDisconnect(socket) {
-    const rule = new schedule.RecurrenceRule();
-    rule.hour = 16;
-    rule.minute = 1;
-    rule.tz = 'America/New_York';
-
-    schedule.scheduleJob(rule, () => {
-        socket.disconnect();
-    });
-}
-
-function scheduleDailyReconnect(socket) {
-    const rule = new schedule.RecurrenceRule();
-    rule.hour = 7;
-    rule.minute = 58;
-    rule.tz = 'America/New_York';
-
-    schedule.scheduleJob(rule, () => {
-        socket.connect();
-    });
-}
 
 class DataStream {
     constructor({ apiKey, secretKey, feed, paper = true }) {
@@ -68,10 +10,12 @@ class DataStream {
             feed,
             paper
         });
+        
+        // VOO initialization
+        this.voo = new TenDollarStockPurchaseClass(this.alpaca, 'VOO');
 
-        this.vooObj = new voo(this.alpaca);
         const socket = this.alpaca.data_stream_v2;
-        dailySchedules(socket, this.vooObj);
+        TenDollarStockPurchaseClass.initializeCommonSchedules();
 
         socket.onConnect(function () {
             console.log(`${new Date().toLocaleString()} :: Socket connected`);
@@ -89,7 +33,7 @@ class DataStream {
         socket.onStockQuote(async (quote) => {
             switch (quote.Symbol) {
                 case "VOO":
-                    await this.vooObj.handleQuoteChange(quote);
+                    await this.voo.handleQuoteChange(quote);
                     break;
                 default:
                     //do nothing;
@@ -115,6 +59,30 @@ class DataStream {
 
 
         socket.connect();
+        this.scheduleDailyReconnect();
+        this.scheduleDailyDisconnect();
+    }
+
+    scheduleDailyReconnect() {
+        const rule = new schedule.RecurrenceRule();
+        rule.hour = 7;
+        rule.minute = 58;
+        rule.tz = 'America/New_York';
+    
+        schedule.scheduleJob(rule, () => {
+            this.alpaca.data_stream_v2connect().connect();
+        });
+    }
+    
+    scheduleDailyDisconnect () {
+        const rule = new schedule.RecurrenceRule();
+        rule.hour = 16;
+        rule.minute = 1;
+        rule.tz = 'America/New_York';
+    
+        schedule.scheduleJob(rule, () => {
+            this.alpaca.data_stream_v2connect().disconnect();
+        });
     }
 }
 
