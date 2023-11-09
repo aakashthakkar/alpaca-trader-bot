@@ -2,6 +2,11 @@ const Alpaca = require("@alpacahq/alpaca-trade-api");
 const voo = require("../trading/voo");
 const schedule = require('node-schedule');
 
+function dailySchedules(socket) {
+    scheduleDailyStockPurchase();
+    scheduleDailyReconnect(socket);
+    scheduleDailyDisconnect(socket);
+}
 
 function scheduleDailyStockPurchase() {
     const rule = new schedule.RecurrenceRule();
@@ -15,6 +20,28 @@ function scheduleDailyStockPurchase() {
     });
 }
 
+function scheduleDailyDisconnect(socket) {
+    const rule = new schedule.RecurrenceRule();
+    rule.hour = 18;
+    rule.minute = 0;
+    rule.tz = 'America/New_York';
+
+    schedule.scheduleJob(rule, () => {
+        socket.disconnect();
+    });
+}
+
+function scheduleDailyReconnect(socket) {
+    const rule = new schedule.RecurrenceRule();
+    rule.hour = 7;
+    rule.minute = 0;
+    rule.tz = 'America/New_York';
+
+    schedule.scheduleJob(rule, () => {
+        socket.connect();
+    });
+}
+
 class DataStream {
     constructor({ apiKey, secretKey, feed, paper = true }) {
         this.alpaca = new Alpaca({
@@ -25,8 +52,8 @@ class DataStream {
         });
        
         this.vooObj = new voo(this.alpaca);
-        scheduleDailyStockPurchase();
         const socket = this.alpaca.data_stream_v2;
+        dailySchedules(socket);
 
         socket.onConnect(function () {
             console.log("Connected");
