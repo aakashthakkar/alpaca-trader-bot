@@ -22,8 +22,8 @@ function scheduleDailyStockPurchase() {
 
 function scheduleDailyDisconnect(socket) {
     const rule = new schedule.RecurrenceRule();
-    rule.hour = 18;
-    rule.minute = 0;
+    rule.hour = 16;
+    rule.minute = 1;
     rule.tz = 'America/New_York';
 
     schedule.scheduleJob(rule, () => {
@@ -34,7 +34,7 @@ function scheduleDailyDisconnect(socket) {
 function scheduleDailyReconnect(socket) {
     const rule = new schedule.RecurrenceRule();
     rule.hour = 7;
-    rule.minute = 0;
+    rule.minute = 58;
     rule.tz = 'America/New_York';
 
     schedule.scheduleJob(rule, () => {

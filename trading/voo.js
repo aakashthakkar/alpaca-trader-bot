@@ -7,17 +7,21 @@ class voo {
     static TOTAL_ORDER_FAILURES = 0;
     async buyTenDollarVoo(event) {
         try {
-            voo.TOTAL_TRADES_TODAY.splice(voo.TOTAL_TRADES_TODAY.indexOf(event), 1);
-            await this.alpaca.createOrder({
-                symbol: 'VOO',
-                notional: 10,
-                side: 'buy',
-                type: "market",
-                time_in_force: "day"
-            });
-            console.log(`${new Date().toLocaleString()} Purchased 10 dollars of VOO for event:  ${event}`);
-            // update only if order succeeds
-            this.updateVooPricing();
+            // is market open?
+            const marketIsOpen = await this.alpaca.getClock().is_open;
+            if(marketIsOpen){
+                voo.TOTAL_TRADES_TODAY.splice(voo.TOTAL_TRADES_TODAY.indexOf(event), 1);
+                await this.alpaca.createOrder({
+                    symbol: 'VOO',
+                    notional: 10,
+                    side: 'buy',
+                    type: "market",
+                    time_in_force: "day"
+                });
+                console.log(`${new Date().toLocaleString()} Purchased 10 dollars of VOO for event:  ${event}`);
+                // update only if order succeeds
+                await this.updateVooPricing();
+            }
         } catch (error) {
             // order failed, add event back to array. Limit adding event back to avoid infinite loop of orders
             if(voo.TOTAL_ORDER_FAILURES++ < 5) voo.TOTAL_TRADES_TODAY.push(event);
