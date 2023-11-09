@@ -5,27 +5,27 @@ class voo {
     };
     static TOTAL_TRADES_TODAY = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
     static TOTAL_ORDER_FAILURES = 0;
+    static DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
+
     async buyTenDollarVoo(event) {
         try {
-            // is market open?
-            const marketIsOpen = await this.alpaca.getClock().is_open;
-            if(marketIsOpen){
-                voo.TOTAL_TRADES_TODAY.splice(voo.TOTAL_TRADES_TODAY.indexOf(event), 1);
-                await this.alpaca.createOrder({
-                    symbol: 'VOO',
-                    notional: 10,
-                    side: 'buy',
-                    type: "market",
-                    time_in_force: "day"
-                });
-                console.log(`${new Date().toLocaleString()} Purchased 10 dollars of VOO for event:  ${event}`);
-                // update only if order succeeds
-                await this.updateVooPricing();
-            }
+            // double check market open after 3:59PM
+            if(DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
+            voo.TOTAL_TRADES_TODAY.splice(voo.TOTAL_TRADES_TODAY.indexOf(event), 1);
+            await this.alpaca.createOrder({
+                symbol: 'VOO',
+                notional: 10,
+                side: 'buy',
+                type: "market",
+                time_in_force: "day"
+            });
+            console.log(`${new Date().toLocaleString()} :: Purchased 10 dollars of VOO for event:  ${event}`);
+            // update only if order succeeds
+            await this.updateVooPricing();
         } catch (error) {
             // order failed, add event back to array. Limit adding event back to avoid infinite loop of orders
             if(voo.TOTAL_ORDER_FAILURES++ < 5) voo.TOTAL_TRADES_TODAY.push(event);
-            console.log(`${new Date().toLocaleString()} couldn't place order ${JSON.stringify(error)}`);
+            console.log(`${new Date().toLocaleString()} :: couldn't place order ${JSON.stringify(error)}`);
         }
         
     }
@@ -36,7 +36,7 @@ class voo {
             this.avg_last_twenty_order_purchase_price = await this.getLastTwentyOrderPurchaseAverage();
             this.avg_last_hundred_order_purchase_price = await this.getLastHundredOrderPurchaseAverage();
         } catch (error) {
-            console.log(`${new Date().toLocaleString()} couldn't update VOO pricing :${JSON.stringify(error)}`);
+            console.log(`${new Date().toLocaleString()} :: couldn't update VOO pricing :${JSON.stringify(error)}`);
         }
     }
 
@@ -46,7 +46,7 @@ class voo {
             const voo_asset_information = positions.find(position => position.symbol === 'VOO');
             return +voo_asset_information.avg_entry_price;
         } catch (error) {
-            console.log(`${new Date().toLocaleString()} couldn't get VOO average entry price : ${JSON.stringify(error)}`);
+            console.log(`${new Date().toLocaleString()} :: couldn't get VOO average entry price : ${JSON.stringify(error)}`);
         }
     }
 
@@ -62,7 +62,7 @@ class voo {
             const voo_order_prices_sum = voo_order_prices.reduce((a, b) => +a + +b, 0);
             return voo_order_prices_sum / voo_order_prices.length;
         } catch (error) {
-            console.log(`${new Date().toLocaleString()} couldn't get last twenty order purchase average : ${JSON.stringify(error)}`);
+            console.log(`${new Date().toLocaleString()} :: couldn't get last twenty order purchase average : ${JSON.stringify(error)}`);
         }
     }
     async getLastHundredOrderPurchaseAverage() {
@@ -76,7 +76,7 @@ class voo {
             const voo_order_prices_sum = voo_order_prices.reduce((a, b) => +a + +b, 0);
             return voo_order_prices_sum / voo_order_prices.length;
         } catch (error) {
-            console.log(`${new Date().toLocaleString()} couldn't get last hundred order purchase average : ${JSON.stringify(error)}`);
+            console.log(`${new Date().toLocaleString()} :: couldn't get last hundred order purchase average : ${JSON.stringify(error)}`);
         }
     }
 
