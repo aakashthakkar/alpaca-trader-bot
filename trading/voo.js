@@ -15,7 +15,7 @@ class voo {
                 type: "market",
                 time_in_force: "day"
             });
-            console.log("Purchased 10 dollars of VOO for event: " + event);
+            console.log(new Date().toLocaleString() + " Purchased 10 dollars of VOO for event: " + event);
             // update only if order succeeds
             this.updateVooPricing();
         } catch (error) {
