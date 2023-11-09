@@ -15,9 +15,7 @@ class DataStream {
         this.voo = new TenDollarStockPurchaseClass(this.alpaca, 'VOO');
 
         const socket = this.alpaca.data_stream_v2;
-        TenDollarStockPurchaseClass.scheduleEnableDoubleCheckMarketClosedBeforePlacingOrder();
-        TenDollarStockPurchaseClass.scheduleDisableDoubleCheckMarketClosedBeforePlacingOrder();
-        
+        TenDollarStockPurchaseClass.initializeCommonSchedules();
 
         socket.onConnect(function () {
             console.log(`${new Date().toLocaleString()} :: Socket connected`);

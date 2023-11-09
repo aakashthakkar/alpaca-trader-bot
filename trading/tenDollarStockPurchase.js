@@ -1,5 +1,5 @@
 const schedule = require('node-schedule');
-const DEFAULT_DAILY_TRADES = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
+const DAILY_ENABLED_TRADES = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
 
 
 
@@ -9,7 +9,7 @@ class TenDollarStockPurchaseClass {
         this.pricingInitialized = false;
         this.stockTicker = stockTicker;
         this.dailySchedules();
-        this.totalTradesToday = Object.assign([], DEFAULT_DAILY_TRADES);
+        this.totalTradesToday = Object.assign([], DAILY_ENABLED_TRADES);
         this.totalOrderFailures = 0;
     };
     static DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
@@ -22,24 +22,23 @@ class TenDollarStockPurchaseClass {
     }
 
     // common methods for market open and close
-    static scheduleEnableDoubleCheckMarketClosedBeforePlacingOrder() {
-        const rule = new schedule.RecurrenceRule();
-        rule.hour = 15;
-        rule.minute = 59;
-        rule.tz = 'America/New_York';
+    static initializeCommonSchedules() {
+        const openRule = new schedule.RecurrenceRule();
+        openRule.hour = 6;
+        openRule.minute = 0;
+        openRule.tz = 'America/New_York';
     
-        schedule.scheduleJob(rule, () => {
-            TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
-        });
-    }
-    static scheduleDisableDoubleCheckMarketClosedBeforePlacingOrder() {
-        const rule = new schedule.RecurrenceRule();
-        rule.hour = 6;
-        rule.minute = 0;
-        rule.tz = 'America/New_York';
-    
-        schedule.scheduleJob(rule, () => {
+        schedule.scheduleJob(openRule, () => {
             TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
+        });
+        
+        const closeRule = new schedule.RecurrenceRule();
+        closeRule.hour = 15;
+        closeRule.minute = 59;
+        closeRule.tz = 'America/New_York';
+    
+        schedule.scheduleJob(closeRule, () => {
+            TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
         });
     }
      
@@ -50,7 +49,7 @@ class TenDollarStockPurchaseClass {
         rule.tz = 'America/New_York';
 
         schedule.scheduleJob(rule, () => {
-            this.totalTradesToday = Object.assign([], DEFAULT_DAILY_TRADES);
+            this.totalTradesToday = Object.assign([], DAILY_ENABLED_TRADES);
             this.totalOrderFailures = 0;
             this.pricingInitialized = false;
         });
