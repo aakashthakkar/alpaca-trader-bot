@@ -60,7 +60,7 @@ class DailyPurchaseClass {
     /*
         Order methods
     */
-    async buyTenDollarStock(event, socket) {
+    async buyTenDollarStock(event) {
         try {
             this.totalTradesToday.splice(this.totalTradesToday.indexOf(event), 1);
             // double check market still open after 3:59PM
@@ -73,11 +73,6 @@ class DailyPurchaseClass {
                 time_in_force: "day"
             });
             console.log(`${new Date().toLocaleString()} :: Purchased 10 dollars of ${this.stockTicker} for event:  ${event}`);
-            // if all trades completed, disconnect socket
-            if (this.totalTradesToday.length === 0) {
-                console.log(`${new Date().toLocaleString()} :: All trades for ${this.stockTicker} completed for today`);
-                socket.disconnect();
-            }
             // update only if order succeeds
             await this.updateStockPricing();
         } catch (error) {
@@ -127,25 +122,25 @@ class DailyPurchaseClass {
     /*
         Event handlers
     */
-    async handleQuoteChange(quote, socket) {
+    async handleQuoteChange(quote) {
         // first time initialization of pricing information
         if (!this.pricingInitialized) { await this.updateStockPricing(); this.pricingInitialized = true; }
         const currentPurchasePrice = quote.AskPrice;
         this.totalTradesToday.forEach(event => {
             switch (event) {
                 case "DAILY_PURCHASE":
-                    this.buyTenDollarStock(event, socket);
+                    this.buyTenDollarStock(event);
                     break;
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
                     if (currentPurchasePrice < this.avg_entry_price) {
-                        this.buyTenDollarStock(event, socket);
+                        this.buyTenDollarStock(event);
                     }
                     break;
                 case event.startsWith("PRICE_LOWER_THAN_LAST"):
                     try {
                         const x = event.split("_")[4];
                         if (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`]) {
-                            this.buyTenDollarStock(event, socket);
+                            this.buyTenDollarStock(event);
                         }
                     } catch (error) {
                         console.log(`${new Date().toLocaleString()} :: invalid event string ${event} for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
