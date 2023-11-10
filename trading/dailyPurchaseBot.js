@@ -65,13 +65,13 @@ class DailyPurchaseClass {
             this.totalTradesToday.splice(this.totalTradesToday.indexOf(event), 1);
             // double check market still open after 3:59PM
             if (DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
-            await this.alpaca.createOrder({
-                symbol: this.stockTicker,
-                notional: 10,
-                side: 'buy',
-                type: "market",
-                time_in_force: "day"
-            });
+            // await this.alpaca.createOrder({
+            //     symbol: this.stockTicker,
+            //     notional: 10,
+            //     side: 'buy',
+            //     type: "market",
+            //     time_in_force: "day"
+            // });
             console.log(`${new Date().toLocaleString()} :: Purchased 10 dollars of ${this.stockTicker} for event:  ${event}`);
             // update only if order succeeds
             await this.updateStockPricing();
@@ -122,7 +122,7 @@ class DailyPurchaseClass {
     /*
         Event handlers
     */
-    async handleQuoteChange(quote) {
+    async handleQuoteChangeForPurchase(quote) {
         // first time initialization of pricing information
         if (!this.pricingInitialized) { await this.updateStockPricing(); this.pricingInitialized = true; }
         const currentPurchasePrice = quote.AskPrice;

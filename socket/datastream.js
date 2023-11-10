@@ -34,7 +34,7 @@ class DataStream {
         });
 
         socket.onStockQuote(async (quote) => {
-            await this[quote.Symbol].handleQuoteChange(quote);
+            await this[quote.Symbol].handleQuoteChangeForPurchase(quote);
         });
 
         socket.onStockBar((bar) => {
