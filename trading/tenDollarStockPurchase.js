@@ -61,7 +61,7 @@ class TenDollarStockPurchaseClass {
     /*
         Order methods
     */
-    async buyTenDollarStock(event) {
+    async buyTenDollarStock(event, socket) {
         try {
             this.totalTradesToday.splice(this.totalTradesToday.indexOf(event), 1);
             // double check market still open after 3:59PM
@@ -74,6 +74,10 @@ class TenDollarStockPurchaseClass {
                 time_in_force: "day"
             });
             console.log(`${new Date().toLocaleString()} :: Purchased 10 dollars of ${this.stockTicker} for event:  ${event}`);
+            if(this.totalTradesToday.length === 0) {
+                console.log(`${new Date().toLocaleString()} :: All trades for ${this.stockTicker} completed for today`);
+                socket.disconnect();
+            }
             // update only if order succeeds
             await this.updateStockPricing();
         } catch (error) {
@@ -137,28 +141,28 @@ class TenDollarStockPurchaseClass {
     /*
         Event handlers
     */
-    async handleQuoteChange(quote) {
+    async handleQuoteChange(quote, socket) {
         // first time initialization of pricing information
         if (!this.pricingInitialized) { await this.updateStockPricing(); this.pricingInitialized = true; }
         const currentPurchasePrice = quote.AskPrice;
         this.totalTradesToday.forEach(event => {
             switch (event) {
                 case "DAILY_PURCHASE":
-                    this.buyTenDollarStock('DAILY_PURCHASE');
+                    this.buyTenDollarStock('DAILY_PURCHASE', socket);
                     break;
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
                     if (currentPurchasePrice < this.avg_entry_price) {
-                        this.buyTenDollarStock('PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE');
+                        this.buyTenDollarStock('PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE', socket);
                     }
                     break;
                 case "PRICE_LOWER_THAN_LAST_TWENTY_ORDER_PURCHASE_AVERAGE":
                     if (currentPurchasePrice < this.avg_last_twenty_order_purchase_price) {
-                        this.buyTenDollarStock('PRICE_LOWER_THAN_LAST_TWENTY_ORDER_PURCHASE_AVERAGE');
+                        this.buyTenDollarStock('PRICE_LOWER_THAN_LAST_TWENTY_ORDER_PURCHASE_AVERAGE', socket);
                     }
                     break;
                 case "PRICE_LOWER_THAN_LAST_HUNDRED_ORDER_PURCHASE_AVERAGE":
                     if (currentPurchasePrice < this.avg_last_hundred_order_purchase_price) {
-                        this.buyTenDollarStock('PRICE_LOWER_THAN_LAST_HUNDRED_ORDER_PURCHASE_AVERAGE');
+                        this.buyTenDollarStock('PRICE_LOWER_THAN_LAST_HUNDRED_ORDER_PURCHASE_AVERAGE', socket);
                     }
                     break;
                 default:

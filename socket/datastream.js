@@ -33,7 +33,7 @@ class DataStream {
         socket.onStockQuote(async (quote) => {
             switch (quote.Symbol) {
                 case "VOO":
-                    await this.voo.handleQuoteChange(quote);
+                    await this.voo.handleQuoteChange(quote, socket);
                     break;
                 default:
                     //do nothing;
