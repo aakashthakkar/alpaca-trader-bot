@@ -23,7 +23,7 @@ try {
 let AVG_TRADES = [], LAST_X_AVG_TRADES_QTY = [];
 try {
     AVG_TRADES = DAILY_ENABLED_TRADES.filter(event => event.startsWith("PRICE_LOWER_THAN_LAST"));
-    LAST_X_AVG_TRADES_QTY = AVG_TRADES.map(event => event.split("_")[4]);
+    LAST_X_AVG_TRADES_QTY = AVG_TRADES.map(event => +event.split("_")[4]);
 } catch (error) {
     AVG_TRADES = [], LAST_X_AVG_TRADES_QTY = [];
     console.log(`${new Date().toLocaleString()} :: invalid event string for LAST_X_ORDER_PURCHASE_AVERAGE: ${JSON.stringify(error)}`);

@@ -87,9 +87,10 @@ class DailyPurchaseClass {
     */
     async updateStockPricing() {
         try {
-            this.avg_entry_price.avg_entry_price = await this.getStockAverageEntryPrice();
-            this.LAST_X_AVG_TRADES_QTY.forEach(async (x) => {
-                this.avg_entry_price[`last_${x}_order_avg_price`] = await this.getLastXOrderPurchaseAverage(x);
+            this.avg_entry_price.overall_avg_entry_price = await this.getStockAverageEntryPrice();
+            await this.LAST_X_AVG_TRADES_QTY.forEach(async (x) => {
+                const average = await this.getLastXOrderPurchaseAverage(x);
+                this.avg_entry_price[`last_${x}_order_avg_price`] = average;
             });
         } catch (error) {
             console.log(`${new Date().toLocaleString()} :: couldn't update ${this.stockTicker} stock pricing :${JSON.stringify(error)}`);
@@ -132,23 +133,24 @@ class DailyPurchaseClass {
                     this.buyTenDollarStock(event);
                     break;
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
-                    if (currentPurchasePrice < this.avg_entry_price) {
+                    if (currentPurchasePrice < this.avg_entry_price.overall_avg_entry_price) {
                         this.buyTenDollarStock(event);
-                    }
-                    break;
-                case event.startsWith("PRICE_LOWER_THAN_LAST"):
-                    try {
-                        const x = event.split("_")[4];
-                        if (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`]) {
-                            this.buyTenDollarStock(event);
-                        }
-                    } catch (error) {
-                        console.log(`${new Date().toLocaleString()} :: invalid event string ${event} for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
                     }
                     break;
                 default:
                     //do nothing;
                     break;
+            }
+            // check for last x order purchase average
+            if(event.startsWith("PRICE_LOWER_THAN_LAST")) {
+                try {
+                    const x = event.split("_")[4];
+                    if (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`]) {
+                        this.buyTenDollarStock(event);
+                    }
+                } catch (error) {
+                    console.log(`${new Date().toLocaleString()} :: invalid event string ${event} for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
+                }
             }
         });
     }
