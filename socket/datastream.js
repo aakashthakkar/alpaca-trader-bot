@@ -1,8 +1,7 @@
 const Alpaca = require("@alpacahq/alpaca-trade-api");
-const TenDollarStockPurchaseClass = require("../trading/tenDollarStockPurchase");
+const DailyPurchaseClass = require("../trading/dailyPurchaseBot");
 const schedule = require('node-schedule');
-let STOCK_LIST = process.env.STOCK_LIST ?? 'VOO';
-STOCK_LIST = STOCK_LIST.split(/\s*,\s*/);
+const { STOCK_LIST, DAILY_ENABLED_TRADES, LAST_X_AVG_TRADES_QTY } = require("../utils/tradeValues");
 
 class DataStream {
     constructor({ apiKey, secretKey, feed, paper = true }) {
@@ -12,14 +11,14 @@ class DataStream {
             feed,
             paper
         });
-        
+
         //initialization of all stock objects
         STOCK_LIST.forEach((stockTicker) => {
-            this[stockTicker] = new TenDollarStockPurchaseClass(this.alpaca, stockTicker);
+            this[stockTicker] = new DailyPurchaseClass(this.alpaca, stockTicker, DAILY_ENABLED_TRADES, LAST_X_AVG_TRADES_QTY);
         });
 
         const socket = this.alpaca.data_stream_v2;
-        TenDollarStockPurchaseClass.initializeCommonSchedules();
+        DailyPurchaseClass.initializeCommonSchedules();
 
         socket.onConnect(function () {
             console.log(`${new Date().toLocaleString()} :: Socket connected`);
@@ -65,18 +64,18 @@ class DataStream {
         rule.hour = 7;
         rule.minute = 58;
         rule.tz = 'America/New_York';
-    
+
         schedule.scheduleJob(rule, () => {
             this.alpaca.data_stream_v2connect().connect();
         });
     }
-    
-    scheduleDailyDisconnect () {
+
+    scheduleDailyDisconnect() {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 16;
         rule.minute = 1;
         rule.tz = 'America/New_York';
-    
+
         schedule.scheduleJob(rule, () => {
             this.alpaca.data_stream_v2connect().disconnect();
         });

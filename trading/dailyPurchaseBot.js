@@ -1,9 +1,7 @@
 const schedule = require('node-schedule');
-let DAILY_ENABLED_TRADES = process.env.DAILY_ENABLED_TRADES ?? 'DAILY_PURCHASE,PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE';
-DAILY_ENABLED_TRADES = DAILY_ENABLED_TRADES.split(/\s*,\s*/);
 
-class TenDollarStockPurchaseClass {
-    constructor(alpaca, stockTicker) {
+class DailyPurchaseClass {
+    constructor(alpaca, stockTicker, DAILY_ENABLED_TRADES, LAST_X_AVG_TRADES_QTY) {
         // initialized values
         this.alpaca = alpaca;
         this.stockTicker = stockTicker;
@@ -13,9 +11,11 @@ class TenDollarStockPurchaseClass {
         this.pricingInitialized = false;
         this.totalTradesToday = Object.assign([], DAILY_ENABLED_TRADES);
         this.totalOrderFailures = 0;
+        this.avg_entry_price = {};
+        this.LAST_X_AVG_TRADES_QTY = LAST_X_AVG_TRADES_QTY;
     };
     static DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
-    
+
     /*
     Scheduling methods
     */
@@ -29,21 +29,21 @@ class TenDollarStockPurchaseClass {
         openRule.hour = 6;
         openRule.minute = 0;
         openRule.tz = 'America/New_York';
-    
+
         schedule.scheduleJob(openRule, () => {
-            TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
+            DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
         });
-        
+
         const closeRule = new schedule.RecurrenceRule();
         closeRule.hour = 15;
         closeRule.minute = 59;
         closeRule.tz = 'America/New_York';
-    
+
         schedule.scheduleJob(closeRule, () => {
-            TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
+            DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
         });
     }
-     
+
     scheduleDailyStockPurchase() {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 6;
@@ -64,7 +64,7 @@ class TenDollarStockPurchaseClass {
         try {
             this.totalTradesToday.splice(this.totalTradesToday.indexOf(event), 1);
             // double check market still open after 3:59PM
-            if (TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
+            if (DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
             await this.alpaca.createOrder({
                 symbol: this.stockTicker,
                 notional: 10,
@@ -74,7 +74,7 @@ class TenDollarStockPurchaseClass {
             });
             console.log(`${new Date().toLocaleString()} :: Purchased 10 dollars of ${this.stockTicker} for event:  ${event}`);
             // if all trades completed, disconnect socket
-            if(this.totalTradesToday.length === 0) {
+            if (this.totalTradesToday.length === 0) {
                 console.log(`${new Date().toLocaleString()} :: All trades for ${this.stockTicker} completed for today`);
                 socket.disconnect();
             }
@@ -92,9 +92,10 @@ class TenDollarStockPurchaseClass {
     */
     async updateStockPricing() {
         try {
-            this.avg_entry_price = await this.getStockAverageEntryPrice();
-            this.avg_last_twenty_order_purchase_price = await this.getLastTwentyOrderPurchaseAverage();
-            this.avg_last_hundred_order_purchase_price = await this.getLastHundredOrderPurchaseAverage();
+            this.avg_entry_price.avg_entry_price = await this.getStockAverageEntryPrice();
+            this.LAST_X_AVG_TRADES_QTY.forEach(async (x) => {
+                this.avg_entry_price[`last_${x}_order_avg_price`] = await this.getLastXOrderPurchaseAverage(x);
+            });
         } catch (error) {
             console.log(`${new Date().toLocaleString()} :: couldn't update ${this.stockTicker} stock pricing :${JSON.stringify(error)}`);
         }
@@ -108,11 +109,11 @@ class TenDollarStockPurchaseClass {
             console.log(`${new Date().toLocaleString()} :: couldn't get ${this.stockTicker} average entry price : ${JSON.stringify(error)}`);
         }
     }
-    async getLastTwentyOrderPurchaseAverage() {
+    async getLastXOrderPurchaseAverage(x) {
         try {
             const orders = await this.alpaca.getOrders({
                 status: 'filled',
-                limit: 20
+                limit: x
             });
             const stock_orders = orders.filter(order => order.symbol === this.stockTicker);
             const stock_order_prices = stock_orders.map(order => order.filled_avg_price);
@@ -120,20 +121,6 @@ class TenDollarStockPurchaseClass {
             return stock_order_prices_sum / stock_order_prices.length;
         } catch (error) {
             console.log(`${new Date().toLocaleString()} :: couldn't get last twenty order purchase average for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
-        }
-    }
-    async getLastHundredOrderPurchaseAverage() {
-        try {
-            const orders = await this.alpaca.getOrders({
-                status: 'filled',
-                limit: 100
-            });
-            const stock_orders = orders.filter(order => order.symbol === this.stockTicker);
-            const stock_order_prices = stock_orders.map(order => order.filled_avg_price);
-            const stock_order_prices_sum = stock_order_prices.reduce((a, b) => +a + +b, 0);
-            return stock_order_prices_sum / stock_order_prices.length;
-        } catch (error) {
-            console.log(`${new Date().toLocaleString()} :: couldn't get last hundred order purchase average for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
         }
     }
 
@@ -147,21 +134,21 @@ class TenDollarStockPurchaseClass {
         this.totalTradesToday.forEach(event => {
             switch (event) {
                 case "DAILY_PURCHASE":
-                    this.buyTenDollarStock('DAILY_PURCHASE', socket);
+                    this.buyTenDollarStock(event, socket);
                     break;
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
                     if (currentPurchasePrice < this.avg_entry_price) {
-                        this.buyTenDollarStock('PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE', socket);
+                        this.buyTenDollarStock(event, socket);
                     }
                     break;
-                case "PRICE_LOWER_THAN_LAST_TWENTY_ORDER_PURCHASE_AVERAGE":
-                    if (currentPurchasePrice < this.avg_last_twenty_order_purchase_price) {
-                        this.buyTenDollarStock('PRICE_LOWER_THAN_LAST_TWENTY_ORDER_PURCHASE_AVERAGE', socket);
-                    }
-                    break;
-                case "PRICE_LOWER_THAN_LAST_HUNDRED_ORDER_PURCHASE_AVERAGE":
-                    if (currentPurchasePrice < this.avg_last_hundred_order_purchase_price) {
-                        this.buyTenDollarStock('PRICE_LOWER_THAN_LAST_HUNDRED_ORDER_PURCHASE_AVERAGE', socket);
+                case event.startsWith("PRICE_LOWER_THAN_LAST"):
+                    try {
+                        const x = event.split("_")[4];
+                        if (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`]) {
+                            this.buyTenDollarStock(event, socket);
+                        }
+                    } catch (error) {
+                        console.log(`${new Date().toLocaleString()} :: invalid event string ${event} for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
                     }
                     break;
                 default:
@@ -173,4 +160,4 @@ class TenDollarStockPurchaseClass {
 }
 
 
-module.exports = TenDollarStockPurchaseClass;
+module.exports = DailyPurchaseClass;
