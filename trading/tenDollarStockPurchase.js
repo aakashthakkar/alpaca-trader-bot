@@ -86,7 +86,6 @@ class TenDollarStockPurchaseClass {
             if (++this.totalOrderFailures < 5) this.totalTradesToday.push(event);
             console.log(`${new Date().toLocaleString()} :: couldn't place order ${JSON.stringify(error)}`);
         }
-
     }
 
     /*
