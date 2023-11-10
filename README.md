@@ -11,9 +11,11 @@ Alpaca trading bot learning project <br />
 # How to setup?
 
 It needs 3 Environment variables
-- API_KEY : string # API key from alpaca
-- SECRET_KEY : string # Secret key from alpaca
-- IS_PAPER: string boolean # flag that decides if the API is paper API (fake money) or live API (real money)
+- API_KEY : string (Required)# API key from alpaca
+- SECRET_KEY : string (Required)# Secret key from alpaca
+- IS_PAPER: string boolean (Optional: default true)# flag that decides if the API is paper API (fake money) or live API (real money) 
+- STOCK_LIST: comma separated string (Optional: default "VOO") # example usage "VOO,AAPL"
+- DAILY_ENABLED_TRADES: comma separated string (Optional: default "DAILY_PURCHASE,PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE") # supported values DAILY_PURCHASE,PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE,PRICE_LOWER_THAN_LAST_20,PRICE_LOWER_THAN_LAST_<X> 
 
 # Running Locally
 - Uses Node 18
