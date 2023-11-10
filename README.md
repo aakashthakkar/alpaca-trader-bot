@@ -1,4 +1,4 @@
-# alpaca-trader-bot
+# Daily stock purchase bot using Alpaca JS API
 Alpaca trading bot learning project <br />
 <b>Use it at your own risk!</b>
 
