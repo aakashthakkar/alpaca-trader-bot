@@ -74,6 +74,7 @@ class TenDollarStockPurchaseClass {
                 time_in_force: "day"
             });
             console.log(`${new Date().toLocaleString()} :: Purchased 10 dollars of ${this.stockTicker} for event:  ${event}`);
+            // if all trades completed, disconnect socket
             if(this.totalTradesToday.length === 0) {
                 console.log(`${new Date().toLocaleString()} :: All trades for ${this.stockTicker} completed for today`);
                 socket.disconnect();
