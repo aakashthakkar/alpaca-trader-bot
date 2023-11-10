@@ -1,7 +1,6 @@
 const schedule = require('node-schedule');
-const DAILY_ENABLED_TRADES = ["DAILY_PURCHASE", "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE"];
-
-
+let DAILY_ENABLED_TRADES = process.env.DAILY_ENABLED_TRADES ?? 'DAILY_PURCHASE,PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE';
+DAILY_ENABLED_TRADES = DAILY_ENABLED_TRADES.split(/\s*,\s*/);
 
 class TenDollarStockPurchaseClass {
     constructor(alpaca, stockTicker) {

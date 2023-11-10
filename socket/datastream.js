@@ -1,6 +1,8 @@
 const Alpaca = require("@alpacahq/alpaca-trade-api");
 const TenDollarStockPurchaseClass = require("../trading/tenDollarStockPurchase");
 const schedule = require('node-schedule');
+let STOCK_LIST = process.env.STOCK_LIST ?? 'VOO';
+STOCK_LIST = STOCK_LIST.split(/\s*,\s*/);
 
 class DataStream {
     constructor({ apiKey, secretKey, feed, paper = true }) {
@@ -11,15 +13,17 @@ class DataStream {
             paper
         });
         
-        // VOO initialization
-        this.voo = new TenDollarStockPurchaseClass(this.alpaca, 'VOO');
+        //initialization of all stock objects
+        STOCK_LIST.forEach((stockTicker) => {
+            this[stockTicker] = new TenDollarStockPurchaseClass(this.alpaca, stockTicker);
+        });
 
         const socket = this.alpaca.data_stream_v2;
         TenDollarStockPurchaseClass.initializeCommonSchedules();
 
         socket.onConnect(function () {
             console.log(`${new Date().toLocaleString()} :: Socket connected`);
-            socket.subscribeForQuotes(["VOO"]);
+            socket.subscribeForQuotes(STOCK_LIST);
         });
 
         socket.onError((err) => {
@@ -31,14 +35,7 @@ class DataStream {
         });
 
         socket.onStockQuote(async (quote) => {
-            switch (quote.Symbol) {
-                case "VOO":
-                    await this.voo.handleQuoteChange(quote, socket);
-                    break;
-                default:
-                    //do nothing;
-                    break;
-            }
+            await this[quote.Symbol].handleQuoteChange(quote, socket);
         });
 
         socket.onStockBar((bar) => {
