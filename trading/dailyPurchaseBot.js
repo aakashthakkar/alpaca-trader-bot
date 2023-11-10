@@ -108,7 +108,9 @@ class DailyPurchaseClass {
     async getLastXOrderPurchaseAverage(x) {
         try {
             const orders = await this.alpaca.getOrders({
+                side: 'buy',
                 status: 'filled',
+                symbol: this.stockTicker,
                 limit: x
             });
             const stock_orders = orders.filter(order => order.symbol === this.stockTicker);
@@ -116,7 +118,7 @@ class DailyPurchaseClass {
             const stock_order_prices_sum = stock_order_prices.reduce((a, b) => +a + +b, 0);
             return stock_order_prices_sum / stock_order_prices.length;
         } catch (error) {
-            console.log(`${new Date().toLocaleString()} :: couldn't get last twenty order purchase average for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
+            console.log(`${new Date().toLocaleString()} :: couldn't get last ${x} order purchase average for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
         }
     }
 
