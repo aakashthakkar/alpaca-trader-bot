@@ -63,8 +63,8 @@ class TenDollarStockPurchaseClass {
     */
     async buyTenDollarStock(event) {
         try {
-            // double check market still open after 3:59PM
             this.totalTradesToday.splice(this.totalTradesToday.indexOf(event), 1);
+            // double check market still open after 3:59PM
             if (TenDollarStockPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
             await this.alpaca.createOrder({
                 symbol: this.stockTicker,
