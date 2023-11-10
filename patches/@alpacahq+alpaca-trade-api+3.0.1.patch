@@ -1,0 +1,32 @@
+diff --git a/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.d.ts b/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.d.ts
+index eab70a0..2ab8540 100644
+--- a/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.d.ts
++++ b/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.d.ts
+@@ -1,4 +1,4 @@
+-export function getAll({ status, until, after, limit, direction, nested, symbols }?: {
++export function getAll({ status, until, after, limit, direction, nested, symbols, side }?: {
+     status: any;
+     until: any;
+     after: any;
+@@ -6,6 +6,7 @@ export function getAll({ status, until, after, limit, direction, nested, symbols
+     direction: any;
+     nested: any;
+     symbols: any;
++    side: any;
+ }): any;
+ export function getOne(id: any): any;
+ export function getByClientOrderId(clientOrderId: any): any;
+diff --git a/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.js b/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.js
+index a4e1ef3..8a13043 100644
+--- a/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.js
++++ b/node_modules/@alpacahq/alpaca-trade-api/dist/resources/order.js
+@@ -1,7 +1,8 @@
+ "use strict";
+ const { omitBy, isNil } = require("lodash");
+-function getAll({ status, until, after, limit, direction, nested, symbols } = {}) {
++function getAll({ status, until, after, limit, direction, nested, symbols, side } = {}) {
+     const queryParams = omitBy({
++        side,
+         status,
+         until,
+         after,
