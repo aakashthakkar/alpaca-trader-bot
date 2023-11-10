@@ -8,14 +8,24 @@ Alpaca trading bot learning project <br />
 - It adds 10 dollars more if the current market price is less than the average price of last 20 orders of VOO purchased. (Disabled by default. Enable manually)<br />
 - It adds 10 dollars more if the current market price is less than the average price of last 100 orders of VOO purchased. (Disabled by default. Enable manually)<br />
 
+- You can do this for multiple stocks and add multiple scenarios on when to buy 10 dollars worth of stocks.
+
 # How to setup?
 
-It needs 3 Environment variables
+Environment variables configuration
 - API_KEY : string (Required)# API key from alpaca
 - SECRET_KEY : string (Required)# Secret key from alpaca
-- IS_PAPER: string boolean (Optional: default true)# flag that decides if the API is paper API (fake money) or live API (real money) 
-- STOCK_LIST: comma separated string (Optional: default "VOO") # example usage "VOO,AAPL"
-- DAILY_ENABLED_TRADES: comma separated string (Optional: default "DAILY_PURCHASE,PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE") # supported values DAILY_PURCHASE,PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE,PRICE_LOWER_THAN_LAST_20,PRICE_LOWER_THAN_LAST_<X> 
+- IS_PAPER: string boolean
+  - (Optional: default true)# flag that decides if the API is paper API (fake money) or live API (real money) 
+- STOCK_LIST: comma separated string
+  - (Optional: default "VOO")# example usage "VOO,AAPL"
+- DAILY_ENABLED_TRADES: comma separated string#
+  - (Optional: default "DAILY_PURCHASE,PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE") 
+  - supported values
+    - DAILY_PURCHASE
+    - PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE
+    - PRICE_LOWER_THAN_LAST_20
+    - PRICE_LOWER_THAN_LAST_{x} 
 
 # Running Locally
 - Uses Node 18
