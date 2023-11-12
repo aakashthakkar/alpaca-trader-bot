@@ -6,10 +6,11 @@ class DailyPurchaseClass {
         this.alpaca = alpaca;
         this.stockTicker = stockTicker;
         this.dailySchedules();
+        this.DAILY_ENABLED_TRADES = DAILY_ENABLED_TRADES;
 
         // changes accordingly
         this.pricingInitialized = false;
-        this.totalTradesToday = Object.assign([], DAILY_ENABLED_TRADES);
+        this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES);
         this.totalOrderFailures = 0;
         this.avg_entry_price = {};
         this.LAST_X_AVG_TRADES_QTY = LAST_X_AVG_TRADES_QTY;
@@ -51,7 +52,7 @@ class DailyPurchaseClass {
         rule.tz = 'America/New_York';
 
         schedule.scheduleJob(rule, () => {
-            this.totalTradesToday = Object.assign([], DAILY_ENABLED_TRADES);
+            this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES);
             this.totalOrderFailures = 0;
             this.pricingInitialized = false;
         });
