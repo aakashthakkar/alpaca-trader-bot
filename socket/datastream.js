@@ -55,29 +55,29 @@ class DataStream {
 
 
         socket.connect();
-        this.scheduleDailyReconnect();
-        this.scheduleDailyDisconnect();
+        this.scheduleDailyReconnect(socket);
+        this.scheduleDailyDisconnect(socket);
     }
 
-    scheduleDailyReconnect() {
+    scheduleDailyReconnect(socket) {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 7;
         rule.minute = 58;
         rule.tz = 'America/New_York';
 
         schedule.scheduleJob(rule, () => {
-            this.alpaca.data_stream_v2connect().connect();
+            socket.connect();
         });
     }
 
-    scheduleDailyDisconnect() {
+    scheduleDailyDisconnect(socket) {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 16;
         rule.minute = 1;
         rule.tz = 'America/New_York';
 
         schedule.scheduleJob(rule, () => {
-            this.alpaca.data_stream_v2connect().disconnect();
+            socket.disconnect();
         });
     }
 }
