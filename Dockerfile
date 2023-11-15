@@ -7,4 +7,4 @@ ENV IS_PAPER="${IS_PAPER}"
 
 WORKDIR /alpaca-trading-bot
 RUN npm i
-CMD ["npm", "run", "start", ">>", "logs.txt"]
+CMD ["npm", "run", "start"]
