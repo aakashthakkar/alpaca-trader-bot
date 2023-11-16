@@ -133,10 +133,12 @@ class DailyPurchaseClass {
         this.totalTradesToday.forEach(event => {
             switch (event) {
                 case "DAILY_PURCHASE":
+                    console.log(`${new Date().toLocaleString()} :: Invoking daily purchase for ${this.stockTicker}`)
                     this.buyTenDollarStock(event);
                     break;
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
                     if (currentPurchasePrice < this.avg_entry_price.overall_avg_entry_price) {
+                        console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price.overall_avg_entry_price} for ${this.stockTicker}`)
                         this.buyTenDollarStock(event);
                     }
                     break;
@@ -149,6 +151,7 @@ class DailyPurchaseClass {
                 try {
                     const x = event.split("_")[4];
                     if (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`]) {
+                        console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price[`last_${x}_order_avg_price`]} for ${this.stockTicker}`)
                         this.buyTenDollarStock(event);
                     }
                 } catch (error) {
