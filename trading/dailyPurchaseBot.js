@@ -55,6 +55,10 @@ class DailyPurchaseClass {
             this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES);
             this.totalOrderFailures = 0;
             this.pricingInitialized = false;
+            if(this.totalTradesToday.includes("DAILY_PURCHASE")) {
+                console.log(`${new Date().toLocaleString()} :: Invoking daily purchase for ${this.stockTicker}`)
+                this.buyTenDollarStock("DAILY_PURCHASE");
+            }
         });
     }
 
@@ -132,12 +136,8 @@ class DailyPurchaseClass {
         const currentPurchasePrice = quote.AskPrice;
         this.totalTradesToday.forEach(event => {
             switch (event) {
-                case "DAILY_PURCHASE":
-                    console.log(`${new Date().toLocaleString()} :: Invoking daily purchase for ${this.stockTicker}`)
-                    this.buyTenDollarStock(event);
-                    break;
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
-                    if (currentPurchasePrice < this.avg_entry_price.overall_avg_entry_price) {
+                    if (!!currentPurchasePrice && (currentPurchasePrice < this.avg_entry_price.overall_avg_entry_price)) {
                         console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price.overall_avg_entry_price} for ${this.stockTicker}`)
                         this.buyTenDollarStock(event);
                     }
@@ -150,7 +150,7 @@ class DailyPurchaseClass {
             if(event.startsWith("PRICE_LOWER_THAN_LAST")) {
                 try {
                     const x = event.split("_")[4];
-                    if (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`]) {
+                    if (!!currentPurchasePrice && (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`])) {
                         console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price[`last_${x}_order_avg_price`]} for ${this.stockTicker}`)
                         this.buyTenDollarStock(event);
                     }
