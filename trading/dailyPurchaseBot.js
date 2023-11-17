@@ -51,13 +51,13 @@ class DailyPurchaseClass {
         rule.minute = 0;
         rule.tz = 'America/New_York';
 
-        schedule.scheduleJob(rule, () => {
+        schedule.scheduleJob(rule, async () => {
             this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES);
             this.totalOrderFailures = 0;
             this.pricingInitialized = false;
             if(this.totalTradesToday.includes("DAILY_PURCHASE")) {
                 console.log(`${new Date().toLocaleString()} :: Invoking daily purchase for ${this.stockTicker}`)
-                this.buyTenDollarStock("DAILY_PURCHASE");
+                await this.buyTenDollarStock("DAILY_PURCHASE");
             }
         });
     }
@@ -134,12 +134,12 @@ class DailyPurchaseClass {
         // first time initialization of pricing information
         if (!this.pricingInitialized) { await this.updateStockPricing(); this.pricingInitialized = true; }
         const currentPurchasePrice = quote.AskPrice;
-        this.totalTradesToday.forEach(event => {
+        this.totalTradesToday.forEach(async (event) => {
             switch (event) {
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
                     if (!!currentPurchasePrice && (currentPurchasePrice < this.avg_entry_price.overall_avg_entry_price)) {
                         console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price.overall_avg_entry_price} for ${this.stockTicker}`)
-                        this.buyTenDollarStock(event);
+                        await this.buyTenDollarStock(event);
                     }
                     break;
                 default:
@@ -152,7 +152,7 @@ class DailyPurchaseClass {
                     const x = event.split("_")[4];
                     if (!!currentPurchasePrice && (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`])) {
                         console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price[`last_${x}_order_avg_price`]} for ${this.stockTicker}`)
-                        this.buyTenDollarStock(event);
+                        await this.buyTenDollarStock(event);
                     }
                 } catch (error) {
                     console.log(`${new Date().toLocaleString()} :: invalid event string ${event} for ${this.stockTicker} stock: ${JSON.stringify(error)}`);
