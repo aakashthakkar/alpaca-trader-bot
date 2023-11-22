@@ -11,6 +11,7 @@ class DataStream {
             feed,
             paper
         });
+        this.lastKnownStatus= null;
 
         //initialization of all stock objects
         STOCK_LIST.forEach((stockTicker) => {
@@ -43,6 +44,7 @@ class DataStream {
 
         socket.onStatuses((s) => {
             console.log(`${new Date().toLocaleString()} :: STATUS: ${JSON.stringify(s)}`);
+            this.lastKnownStatus = s;
         });
 
         socket.onStateChange((state) => {
@@ -66,6 +68,10 @@ class DataStream {
         rule.tz = 'America/New_York';
 
         schedule.scheduleJob(rule, () => {
+            if(this.lastKnownStatus === "connected" || this.lastKnownStatus === "authenticated") {
+                console.log(`${new Date().toLocaleString()} :: Socket already connected, skipping reconnect`);
+                return;
+            }
             socket.connect();
         });
     }
