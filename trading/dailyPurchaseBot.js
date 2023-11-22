@@ -35,13 +35,23 @@ class DailyPurchaseClass {
             DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
         });
 
-        const closeRule = new schedule.RecurrenceRule();
-        closeRule.hour = 15;
-        closeRule.minute = 59;
-        closeRule.tz = 'America/New_York';
+        const beforeCloseRule = new schedule.RecurrenceRule();
+        beforeCloseRule.hour = 15;
+        beforeCloseRule.minute = 59;
+        beforeCloseRule.tz = 'America/New_York';
 
-        schedule.scheduleJob(closeRule, () => {
+        schedule.scheduleJob(beforeCloseRule, () => {
             DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
+        });
+
+        const afterCloseRule = new schedule.RecurrenceRule();
+        afterCloseRule.hour = 16;
+        afterCloseRule.minute = 1;
+        afterCloseRule.tz = 'America/New_York';
+
+        schedule.scheduleJob(afterCloseRule, async () => {
+            // cancel all open orders, since we do not check for holidays/weekends.
+            await this.alpaca.cancelAllOrders();
         });
     }
 
