@@ -51,7 +51,11 @@ class DailyPurchaseClass {
 
         schedule.scheduleJob(afterCloseRule, async () => {
             // cancel all open orders, since we do not check for holidays/weekends.
-            await this.alpaca.cancelAllOrders();
+            try {
+                await this.alpaca.cancelAllOrders();
+            } catch (error) {
+                console.log(`${new Date().toLocaleString()} :: couldn't cancel all orders: ${JSON.stringify(error)}`);
+            }
         });
     }
 
