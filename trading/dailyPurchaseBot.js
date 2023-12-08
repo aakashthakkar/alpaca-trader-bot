@@ -62,7 +62,7 @@ class DailyPurchaseClass {
     scheduleDailyStockPurchase() {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 6;
-        rule.minute = 0;
+        rule.minute = 25;
         rule.tz = 'America/New_York';
 
         schedule.scheduleJob(rule, async () => {
