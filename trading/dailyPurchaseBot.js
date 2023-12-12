@@ -30,6 +30,7 @@ class DailyPurchaseClass {
         openRule.hour = 6;
         openRule.minute = 0;
         openRule.tz = 'America/New_York';
+        openRule.dayOfWeek = [new schedule.Range(1, 5)];
 
         schedule.scheduleJob(openRule, () => {
             DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
@@ -39,6 +40,7 @@ class DailyPurchaseClass {
         beforeCloseRule.hour = 15;
         beforeCloseRule.minute = 59;
         beforeCloseRule.tz = 'America/New_York';
+        beforeCloseRule.dayOfWeek = [new schedule.Range(1, 5)];
 
         schedule.scheduleJob(beforeCloseRule, () => {
             DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
@@ -48,6 +50,7 @@ class DailyPurchaseClass {
         afterCloseRule.hour = 16;
         afterCloseRule.minute = 1;
         afterCloseRule.tz = 'America/New_York';
+        afterCloseRule.dayOfWeek = [new schedule.Range(1, 5)];
 
         schedule.scheduleJob(afterCloseRule, async () => {
             // cancel all open orders, since we do not check for holidays/weekends.
@@ -64,6 +67,7 @@ class DailyPurchaseClass {
         rule.hour = 6;
         rule.minute = 25;
         rule.tz = 'America/New_York';
+        rule.dayOfWeek = [new schedule.Range(1, 5)];
 
         schedule.scheduleJob(rule, async () => {
             this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES);

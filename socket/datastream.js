@@ -66,6 +66,7 @@ class DataStream {
         rule.hour = 7;
         rule.minute = 58;
         rule.tz = 'America/New_York';
+        rule.dayOfWeek = [new schedule.Range(1, 5)];
 
         schedule.scheduleJob(rule, () => {
             if(this.lastKnownStatus === "connected" || this.lastKnownStatus === "authenticated") {
@@ -81,6 +82,7 @@ class DataStream {
         rule.hour = 16;
         rule.minute = 1;
         rule.tz = 'America/New_York';
+        rule.dayOfWeek = [new schedule.Range(1, 5)];
 
         schedule.scheduleJob(rule, () => {
             socket.disconnect();
