@@ -1,31 +1,45 @@
 const schedule = require('node-schedule');
 
+/**
+ * Class to handle daily stock purchases based on predefined rules and schedules.
+ */
 class DailyPurchaseClass {
+    /**
+     * Constructor to initialize the DailyPurchaseClass.
+     * @param {Object} alpaca - Alpaca API client instance.
+     * @param {string} stockTicker - Stock ticker symbol to trade.
+     * @param {Array} DAILY_ENABLED_TRADES - List of enabled trade scenarios.
+     * @param {Array} LAST_X_AVG_TRADES_QTY - List of quantities for last X order averages.
+     */
     constructor(alpaca, stockTicker, DAILY_ENABLED_TRADES, LAST_X_AVG_TRADES_QTY) {
-        // initialized values
-        this.alpaca = alpaca;
-        this.stockTicker = stockTicker;
-        this.dailySchedules();
-        this.DAILY_ENABLED_TRADES = DAILY_ENABLED_TRADES;
+        this.alpaca = alpaca; // Alpaca API client
+        this.stockTicker = stockTicker; // Stock ticker symbol
+        this.dailySchedules(); // Initialize daily schedules
+        this.DAILY_ENABLED_TRADES = DAILY_ENABLED_TRADES; // Enabled trade scenarios
 
-        // changes accordingly
-        this.pricingInitialized = false;
-        this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES);
-        this.totalOrderFailures = 0;
-        this.avg_entry_price = {};
-        this.LAST_X_AVG_TRADES_QTY = LAST_X_AVG_TRADES_QTY;
+        // State variables
+        this.pricingInitialized = false; // Flag to check if pricing is initialized
+        this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES); // Tracks trades for the day
+        this.totalOrderFailures = 0; // Tracks order failures
+        this.avg_entry_price = {}; // Stores average entry prices
+        this.LAST_X_AVG_TRADES_QTY = LAST_X_AVG_TRADES_QTY; // Quantities for last X order averages
     };
+
+    // Static property to double-check market closure before placing orders
     static DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
 
-    /*
-    Scheduling methods
-    */
+    /**
+     * Initializes daily schedules for stock purchases.
+     */
     dailySchedules() {
         this.scheduleDailyStockPurchase();
     }
 
-    // common methods for market open and close
+    /**
+     * Static method to initialize common schedules for market open and close events.
+     */
     static initializeCommonSchedules() {
+        // Schedule to reset market close flag at market open
         const openRule = new schedule.RecurrenceRule();
         openRule.hour = 6;
         openRule.minute = 0;
@@ -36,6 +50,7 @@ class DailyPurchaseClass {
             DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = false;
         });
 
+        // Schedule to set market close flag before market close
         const beforeCloseRule = new schedule.RecurrenceRule();
         beforeCloseRule.hour = 15;
         beforeCloseRule.minute = 59;
@@ -46,6 +61,7 @@ class DailyPurchaseClass {
             DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER = true;
         });
 
+        // Schedule to cancel all open orders after market close
         const afterCloseRule = new schedule.RecurrenceRule();
         afterCloseRule.hour = 16;
         afterCloseRule.minute = 1;
@@ -53,7 +69,6 @@ class DailyPurchaseClass {
         afterCloseRule.dayOfWeek = [new schedule.Range(1, 5)];
 
         schedule.scheduleJob(afterCloseRule, async () => {
-            // cancel all open orders, since we do not check for holidays/weekends.
             try {
                 await this.alpaca.cancelAllOrders();
             } catch (error) {
@@ -62,6 +77,9 @@ class DailyPurchaseClass {
         });
     }
 
+    /**
+     * Schedules daily stock purchases at a specific time.
+     */
     scheduleDailyStockPurchase() {
         const rule = new schedule.RecurrenceRule();
         rule.hour = 6;
@@ -73,20 +91,20 @@ class DailyPurchaseClass {
             this.totalTradesToday = Object.assign([], this.DAILY_ENABLED_TRADES);
             this.totalOrderFailures = 0;
             this.pricingInitialized = false;
-            if(this.totalTradesToday.includes("DAILY_PURCHASE")) {
-                console.log(`${new Date().toLocaleString()} :: Invoking daily purchase for ${this.stockTicker}`)
+            if (this.totalTradesToday.includes("DAILY_PURCHASE")) {
+                console.log(`${new Date().toLocaleString()} :: Invoking daily purchase for ${this.stockTicker}`);
                 await this.buyTenDollarStock("DAILY_PURCHASE");
             }
         });
     }
 
-    /*
-        Order methods
-    */
+    /**
+     * Places a $10 stock purchase order.
+     * @param {string} event - The trade scenario triggering the purchase.
+     */
     async buyTenDollarStock(event) {
         try {
             this.totalTradesToday.splice(this.totalTradesToday.indexOf(event), 1);
-            // double check market still open after 3:59PM
             if (DailyPurchaseClass.DOUBLE_CHECK_MARKET_CLOSE_BEFORE_ORDER && await !this.alpaca.getClock().is_open) return;
             await this.alpaca.createOrder({
                 symbol: this.stockTicker,
@@ -96,18 +114,16 @@ class DailyPurchaseClass {
                 time_in_force: "day"
             });
             console.log(`${new Date().toLocaleString()} :: Purchased 10 dollars of ${this.stockTicker} for event:  ${event}`);
-            // update only if order succeeds
             await this.updateStockPricing();
         } catch (error) {
-            // order failed, add event back to array. Limit adding event back to avoid infinite loop of orders
             if (++this.totalOrderFailures < 5) this.totalTradesToday.push(event);
             console.log(`${new Date().toLocaleString()} :: couldn't place order ${JSON.stringify(error)}`);
         }
     }
 
-    /*
-        Pricing methods
-    */
+    /**
+     * Updates stock pricing information, including overall and last X order averages.
+     */
     async updateStockPricing() {
         try {
             this.avg_entry_price.overall_avg_entry_price = await this.getStockAverageEntryPrice();
@@ -119,6 +135,11 @@ class DailyPurchaseClass {
             console.log(`${new Date().toLocaleString()} :: couldn't update ${this.stockTicker} stock pricing :${JSON.stringify(error)}`);
         }
     }
+
+    /**
+     * Retrieves the overall average entry price of the stock.
+     * @returns {number} - The average entry price.
+     */
     async getStockAverageEntryPrice() {
         try {
             const positions = await this.alpaca.getPositions();
@@ -128,6 +149,12 @@ class DailyPurchaseClass {
             console.log(`${new Date().toLocaleString()} :: couldn't get ${this.stockTicker} average entry price : ${JSON.stringify(error)}`);
         }
     }
+
+    /**
+     * Retrieves the average price of the last X orders.
+     * @param {number} x - The number of recent orders to consider.
+     * @returns {number} - The average price of the last X orders.
+     */
     async getLastXOrderPurchaseAverage(x) {
         try {
             const orders = await this.alpaca.getOrders({
@@ -145,31 +172,29 @@ class DailyPurchaseClass {
         }
     }
 
-    /*
-        Event handlers
-    */
+    /**
+     * Handles stock quote changes and triggers purchases based on trade scenarios.
+     * @param {Object} quote - The stock quote data.
+     */
     async handleQuoteChangeForPurchase(quote) {
-        // first time initialization of pricing information
         if (!this.pricingInitialized) { await this.updateStockPricing(); this.pricingInitialized = true; }
         const currentPurchasePrice = quote.AskPrice;
         this.totalTradesToday.forEach(async (event) => {
             switch (event) {
                 case "PRICE_LOWER_THAN_AVERAGE_PURCHASE_PRICE":
                     if (!!currentPurchasePrice && (currentPurchasePrice < this.avg_entry_price.overall_avg_entry_price)) {
-                        console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price.overall_avg_entry_price} for ${this.stockTicker}`)
+                        console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price.overall_avg_entry_price} for ${this.stockTicker}`);
                         await this.buyTenDollarStock(event);
                     }
                     break;
                 default:
-                    //do nothing;
                     break;
             }
-            // check for last x order purchase average
-            if(event.startsWith("PRICE_LOWER_THAN_LAST")) {
+            if (event.startsWith("PRICE_LOWER_THAN_LAST")) {
                 try {
                     const x = event.split("_")[4];
                     if (!!currentPurchasePrice && (currentPurchasePrice < this.avg_entry_price[`last_${x}_order_avg_price`])) {
-                        console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price[`last_${x}_order_avg_price`]} for ${this.stockTicker}`)
+                        console.log(`${new Date().toLocaleString()} :: Invoking ${event} purchase because current purchase price of ${currentPurchasePrice} is lower than ${this.avg_entry_price[`last_${x}_order_avg_price`]} for ${this.stockTicker}`);
                         await this.buyTenDollarStock(event);
                     }
                 } catch (error) {
@@ -179,6 +204,5 @@ class DailyPurchaseClass {
         });
     }
 }
-
 
 module.exports = DailyPurchaseClass;
